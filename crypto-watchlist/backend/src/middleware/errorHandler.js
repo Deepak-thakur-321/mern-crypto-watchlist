@@ -1,17 +1,33 @@
 const errorHandler = (err, req, res, next) => {
-   console.error(`Error: ${err.message}`);
+      let statusCode = err.statusCode || res.statusCode === 200 ? 500 : res.statusCode;
+   let message = err.message || 'Server Error';
+   let error = { ...err };
 
-   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-
-   if (err.name === 'ValidationError') {
+   // Mongoose Validation Error
+   if (error.name === 'ValidationError') {
       statusCode = 400;
-   } else if (err.name === 'CastError') {
-      statusCode = 404;
+      message = Object.values(error.errors).map(val => val.message).join(', ');
    }
+
+   // Mongoose CastError (invalid ObjectId)
+   if (error.name === 'CastError') {
+      statusCode = 404;
+      message = 'Resource not found or invalid ID';
+   }
+
+   // Duplicate key error (Code 11000)
+   if (error.code === 11000) {
+      statusCode = 400;
+      const field = Object.keys(error.keyValue).join(', ');
+      message = `Duplicate value entered for ${field}.`;
+   }
+
+   // FINAL LOGGING //
+   console.error(`[${statusCode}] ${message} Stack: ${process.env.NODE_ENV === 'development' ? err.stack : 'Hidden in Production'}`);
 
    res.status(statusCode).json({
       success: false,
-      message: err.message || 'Server Error',
+      message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
    });
 };
