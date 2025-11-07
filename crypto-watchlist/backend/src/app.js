@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 
 // Rate limiters
@@ -24,11 +25,17 @@ app.use(express.json());
 // Cookie parser (needed for JWT in cookies)
 app.use(cookieParser());
 
-// Enable CORS
+app.use(helmet());
 app.use(cors({
-   origin: process.env.FRONTEND_URL || "*", // replace with frontend URL in prod
+   origin: process.env.FRONTEND_URL || "http://localhost:5173",
    credentials: true,
 }));
+
+// Enable CORS
+// app.use(cors({
+//    origin: process.env.FRONTEND_URL || "*", // replace with frontend URL in prod
+//    credentials: true,
+// }));
 
 // HTTP request logger (dev only)
 if (process.env.NODE_ENV === "development") {
