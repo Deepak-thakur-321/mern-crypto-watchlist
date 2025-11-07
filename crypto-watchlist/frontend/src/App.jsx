@@ -1,27 +1,108 @@
-import { useState } from 'react'
-import './index.css'
+import React from 'react';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import Navbar from '../src/components/Navbar.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import NotFound from "./pages/NotFound.jsx";
 
-function App() {
-  const [count, setCount] = useState(0)
+const PageWrapper = ({ title, children }) => (
+  <div className="flex flex-col items-center justify-start min-h-[calc(100vh-64px)] bg-slate-900 text-white p-8">
+    <h1 className="text-4xl font-extrabold text-indigo-400 mb-6 border-b border-indigo-500/50 pb-2">{title}</h1>
+    {children}
+  </div>
+);
 
+const Home = () => (
+  <PageWrapper title="FileSure: Secure Storage">
+    <p className="text-xl text-slate-300 max-w-2xl text-center">
+      आपके संवेदनशील डेटा के लिए सुरक्षित क्लाउड समाधान। शुरू करने के लिए लॉग इन या रजिस्टर करें।
+    </p>
+  </PageWrapper>
+);
+
+const About = () => (
+  <PageWrapper title="About FileSure">
+    <p className="text-lg text-slate-400 max-w-3xl text-center"> </p>
+  </PageWrapper>
+);
+
+const Dashboard = () => (
+  <PageWrapper title="Dashboard">
+    <p className="text-xl text-green-400">
+    
+    </p>
+    <p className="text-lg text-slate-400 mt-4">
+     
+    </p>
+  </PageWrapper>
+);
+
+// --- Main Layout Component ---
+const AppLayout = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          🚀 OneTap Frontend (Tailwind v4)
-        </h1>
-        <button
-          className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg transition mb-4"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-        <p className="text-gray-600">
-          Edit <code className="bg-gray-100 px-2 py-1 rounded text-sm">src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
+    <div className="min-h-screen bg-slate-900">
+      <Navbar />
+      <main>
+        <Outlet /> 
+      </main>
     </div>
-  )
+  );
+};
+
+// --- Main App Component (Router Setup) ---
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastContainer
+          position="bottom-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+
+        <Routes>
+          <Route element={<AppLayout />}>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="*" element={<NotFound />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 404 Not Found */}
+            <Route
+              path="*"
+              element={
+                <PageWrapper title="404">
+                  <p className="text-red-500 text-2xl"></p>
+                </PageWrapper>
+              }
+            />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
