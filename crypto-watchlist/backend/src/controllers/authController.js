@@ -10,61 +10,55 @@ const generateToken = (userId) => {
 
 // Cookie Options
 const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+   httpOnly: true,
+   secure: process.env.NODE_ENV === "production",
+   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
 // Register User
 exports.registerUser = async (req, res, next) => {
    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-         return res.status(400).json({ success: false, errors: errors.array() });
-      }
+      const { name, email, password } = req.body;
 
-      const { name, email, password, referralCode } = req.body;
+      if (!name || !email || !password)
+         return res.status(400).json({ success: false, message: "All fields are required" });
 
-      const existing = await User.findOne({ email });
-      if (existing) {
+      // Check if user exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser)
          return res.status(400).json({ success: false, message: "Email already registered" });
-      }
 
-      const newUser = new User({ name, email, password });
+      // Create new user
+      const user = await User.create({ name, email, password });
 
-      // Referral logic (optional)
-      if (referralCode) {
-         const referrer = await User.findOne({ referralCode: referralCode.trim() });
-         if (referrer) {
-            newUser.referredBy = referrer._id;
-            newUser.hasReferral = true;
-            newUser.perksUnlocked.push("Signup Bonus");
-            referrer.perksUnlocked.push("Referral Bonus");
-            await referrer.save();
-         }
-      }
+      // Generate token
+      const token = generateToken(user._id);
 
-      await newUser.save();
-
-      const token = generateToken(newUser._id);
-
+      // Send token in cookie
       res
-         .cookie("token", token, cookieOptions)
+         .cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+         })
          .status(201)
          .json({
             success: true,
             message: "Registration successful",
             user: {
-               id: newUser._id,
-               name: newUser.name,
-               email: newUser.email,
+               id: user._id,
+               name: user.name,
+               email: user.email,
             },
          });
-   } catch (error) {
-      next(error);
+   } catch (err) {
+      next(err);
    }
 };
+
+
 
 // Login User
 exports.loginUser = async (req, res, next) => {
