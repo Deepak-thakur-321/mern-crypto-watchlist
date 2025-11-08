@@ -44,17 +44,20 @@ export const AuthProvider = ({ children }) => {
             const { data } = await axiosInstance.get("/users/profile", {
                withCredentials: true,
             });
-            dispatch({ type: "SET_USER", payload: data.user });
+            if (data?.user) {
+               dispatch({ type: "SET_USER", payload: data.user });
+            } else {
+               dispatch({ type: "LOGOUT" });
+            }
          } catch (err) {
-            console.warn(" Profile fetch failed:", err.response?.data || err.message);
+            console.warn("Profile fetch failed:", err.response?.data || err.message);
             dispatch({ type: "LOGOUT" });
          }
       };
 
-
-      const timeout = setTimeout(fetchProfile, 400);
-      return () => clearTimeout(timeout);
+      fetchProfile(); // call immediately, no timeout
    }, []);
+
 
 
    // Login User
@@ -81,7 +84,7 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: "LOADING" });
       try {
          const { data } = await axiosInstance.post("/auth/register", formData, {
-            withCredentials: true, 
+            withCredentials: true,
          });
          dispatch({ type: "SET_USER", payload: data.user });
          return { success: true };
