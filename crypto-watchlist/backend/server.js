@@ -28,23 +28,14 @@ const allowedOrigins = [
     'https://mern-crypto-watchlist.vercel.app',
 ].filter(Boolean); // Remove undefined values
 
-// CORS middleware with proper origin validation
+// CORS middleware - TEMPORARY: Allow all origins for debugging
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps, Postman, or curl)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Temporarily allow ALL origins
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["Set-Cookie"],
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
 }));
 
 // Parse JSON bodies and cookies
