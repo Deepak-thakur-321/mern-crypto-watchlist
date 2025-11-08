@@ -35,7 +35,7 @@ function reducer(state, action) {
 export const AuthProvider = ({ children }) => {
    const [state, dispatch] = useReducer(reducer, initialState);
 
-   
+
    // Fetch user profile
    useEffect(() => {
       const fetchProfile = async () => {
@@ -51,12 +51,12 @@ export const AuthProvider = ({ children }) => {
          }
       };
 
-      
+
       const timeout = setTimeout(fetchProfile, 400);
       return () => clearTimeout(timeout);
    }, []);
 
-   
+
    // Login User
 
    const login = async (credentials) => {
@@ -76,12 +76,12 @@ export const AuthProvider = ({ children }) => {
 
 
    // Register User
-   
+
    const register = async (formData) => {
       dispatch({ type: "LOADING" });
       try {
          const { data } = await axiosInstance.post("/auth/register", formData, {
-            withCredentials: true,
+            withCredentials: true, 
          });
          dispatch({ type: "SET_USER", payload: data.user });
          return { success: true };
@@ -92,9 +92,9 @@ export const AuthProvider = ({ children }) => {
       }
    };
 
-  
+
    // Logout User
-  
+
    const logout = async () => {
       try {
          await axiosInstance.post("/auth/logout", {}, { withCredentials: true });
