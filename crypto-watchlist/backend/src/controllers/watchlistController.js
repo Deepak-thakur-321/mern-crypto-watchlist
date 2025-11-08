@@ -1,9 +1,7 @@
-// controllers/watchlistController.js
-
 const { validationResult } = require('express-validator');
 const WatchlistItem = require('../models/WatchlistItem');
 
-// ===== GET all watchlist items for a user =====
+//  GET all watchlist items for a user 
 exports.getWatchlist = async (req, res, next) => {
    try {
       const items = await WatchlistItem.find({ user: req.user.id }).sort({ createdAt: -1 });
@@ -13,10 +11,9 @@ exports.getWatchlist = async (req, res, next) => {
    }
 };
 
-// ===== CREATE a new watchlist item =====
+//  CREATE a new watchlist item 
 exports.createWatchlistItem = async (req, res, next) => {
    try {
-      // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
          return res.status(400).json({ success: false, errors: errors.array() });
@@ -25,7 +22,7 @@ exports.createWatchlistItem = async (req, res, next) => {
       const { name, symbol, priceAlert } = req.body;
 
       const newItem = await WatchlistItem.create({
-         user: req.user.id, // Never trust client input for user
+         user: req.user.id,
          name,
          symbol,
          priceAlert,
@@ -37,10 +34,9 @@ exports.createWatchlistItem = async (req, res, next) => {
    }
 };
 
-// ===== UPDATE a watchlist item =====
+//  UPDATE a watchlist item 
 exports.updateWatchlistItem = async (req, res, next) => {
    try {
-      // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
          return res.status(400).json({ success: false, errors: errors.array() });
@@ -65,11 +61,11 @@ exports.updateWatchlistItem = async (req, res, next) => {
 
       res.status(200).json({ success: true, item: updatedItem });
    } catch (error) {
-      next(error); // Centralized error handler handles CastError
+      next(error); 
    }
 };
 
-// ===== DELETE a watchlist item =====
+//  DELETE a watchlist item 
 exports.deleteWatchlistItem = async (req, res, next) => {
    try {
       const item = await WatchlistItem.findById(req.params.id);
@@ -84,6 +80,6 @@ exports.deleteWatchlistItem = async (req, res, next) => {
 
       res.status(200).json({ success: true, message: 'Item removed', id: req.params.id });
    } catch (error) {
-      next(error); // Centralized handler will handle invalid ObjectId
+      next(error); 
    }
 };

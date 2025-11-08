@@ -1,34 +1,57 @@
 const errorHandler = (err, req, res, next) => {
-      let statusCode = err.statusCode || res.statusCode === 200 ? 500 : res.statusCode;
-   let message = err.message || 'Server Error';
+
+   let statusCode =
+      res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+   let message = err.message || "Server Error";
+
+  
    let error = { ...err };
+   error.message = err.message;
 
-   // Mongoose Validation Error
-   if (error.name === 'ValidationError') {
+   // Validation Error 
+   if (err.name === "ValidationError") {
       statusCode = 400;
-      message = Object.values(error.errors).map(val => val.message).join(', ');
+      const errors = Object.values(err.errors).map((val) => val.message);
+      message = errors.join(", ");
    }
 
-   // Mongoose CastError (invalid ObjectId)
-   if (error.name === 'CastError') {
+   //  Invalid ObjectId or malformed ID 
+   if (err.name === "CastError") {
       statusCode = 404;
-      message = 'Resource not found or invalid ID';
+      message = "Resource not found or invalid ID format.";
    }
 
-   // Duplicate key error (Code 11000)
-   if (error.code === 11000) {
+   //  Duplicate Key Error (MongoDB Code: 11000) 
+   if (err.code && err.code === 11000) {
       statusCode = 400;
-      const field = Object.keys(error.keyValue).join(', ');
+      const field = Object.keys(err.keyValue || {}).join(", ");
       message = `Duplicate value entered for ${field}.`;
    }
 
-   // FINAL LOGGING //
-   console.error(`[${statusCode}] ${message} Stack: ${process.env.NODE_ENV === 'development' ? err.stack : 'Hidden in Production'}`);
+   //  JWT Errors (Optional but essential for auth routes) 
+   if (err.name === "JsonWebTokenError") {
+      statusCode = 401;
+      message = "Invalid or expired token. Please log in again.";
+   }
 
+   if (err.name === "TokenExpiredError") {
+      statusCode = 401;
+      message = "Session expired. Please log in again.";
+   }
+
+   //  Final Safe Logging 
+   if (process.env.NODE_ENV !== "production") {
+      console.error(`\n[${statusCode}] ${message}`);
+      console.error(err.stack);
+   } else {
+      console.error(`[${statusCode}] ${message}`);
+   }
+
+   //  Response (Clean for Client) 
    res.status(statusCode).json({
       success: false,
       message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
    });
 };
 

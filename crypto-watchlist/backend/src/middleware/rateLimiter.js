@@ -1,25 +1,31 @@
-const rateLimit = require('express-rate-limit');
+const rateLimit = require("express-rate-limit");
 
-// General API limiter
+// General limiter
 const generalLimiter = rateLimit({
-   windowMs: 15 * 60 * 1000, // 15 minutes
-   max: 100,
+   windowMs: 15 * 60 * 1000, // 15 min
+   max: 200,
    standardHeaders: true,
    legacyHeaders: false,
    handler: (req, res) => {
-      res.status(429).json({ success: false, message: 'Too many requests, please try again after 15 minutes.' });
-   }
+      res.status(429).json({
+         success: false,
+         message: "Too many requests, please try again after 15 minutes.",
+      });
+   },
 });
 
-// Auth limiter
+// Stricter limiter for auth routes (login/register)
 const authLimiter = rateLimit({
-   windowMs: 10 * 60 * 1000, // 10 minutes
-   max: 10,
+   windowMs: 15 * 60 * 1000, // 15 min
+   max: 20,
    standardHeaders: true,
    legacyHeaders: false,
    handler: (req, res) => {
-      res.status(429).json({ success: false, message: 'Too many authentication attempts. Please wait 10 minutes.' });
-   }
+      res.status(429).json({
+         success: false,
+         message: "Too many login/register attempts. Try again later.",
+      });
+   },
 });
 
 module.exports = { generalLimiter, authLimiter };

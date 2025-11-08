@@ -1,67 +1,80 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const helmet = require('helmet');
-const cors = require('cors');
-const watchlistRoutes = require('../backend/src/routes/watchlistRoutes');
-const morgan = require('morgan'); const cookieParser = require('cookie-parser');
+const express = require("express");
+const dotenv = require("dotenv");
+const helmet = require("helmet");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const morgan = require("morgan");
 
-const connectDB = require('../backend/src/db/db');
-const { generalLimiter, authLimiter } = require('../backend/src/middleware/rateLimiter');
-const errorHandler = require('../backend/src/middleware/errorHandler');
+const connectDB = require("./src/db/db");
+const { generalLimiter } = require("./src/middleware/rateLimiter");
+const errorHandler = require("./src/middleware/errorHandler");
+const referralRoutes = require("../backend/src/routes/referralRoutes");
 
-// Route Import
-const authRoutes = require('../backend/src/routes/authRoutes');
-
-// Load environment variables
 dotenv.config();
-
-// Connect to Database
 connectDB();
 
-
-// Initialize App
 const app = express();
+app.use(helmet()); 
 
-// Global Middlewares (Security, Logging, Body Parser)
-app.use(helmet());
-app.use(express.json());
-app.use(cookieParser()); // required to read cookies
-app.use('/api/watchlist', watchlistRoutes);
-app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    credentials: true,
-}));
+// CORS setup
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    process.env.FRONTEND_URL, 
+].filter(Boolean);
 
-if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
 
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`CORS blocked: ${origin}`);
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    credentials: true, 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    exposedHeaders: ["set-cookie"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+
+// Parse JSON bodies and cookies
+app.use(express.json({ limit: "10kb" }));
+app.use(cookieParser());
+
+// Logging & rate limiting
+if (process.env.NODE_ENV === "development") {
+    app.use(morgan("dev"));
+}
 app.use(generalLimiter);
 
-// === Routes ===
-app.get('/', (req, res) => {
-    res.status(200).json({ success: true, message: 'Crypto Watchlist API is running...' });
+// Test route
+app.get("/", (req, res) => {
+    res.status(200).json({ success: true, message: "API is running" });
 });
 
-// Auth Routes
-app.use('/api/auth', authRoutes);
+// API routes
+app.use("/api/auth", require("./src/routes/authRoutes"));
+app.use("/api/users", require("./src/routes/userRoutes"));
+app.use("/api/watchlist", require("./src/routes/watchlistRoutes"));
+app.use("/api/referral", referralRoutes);
 
-
-
-// 404 Not Found Middleware
-app.use((req, res, next) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ success: false, message: "Route not found" });
 });
 
-// Central Error Handler
+// Global error handler
 app.use(errorHandler);
 
-
-// Start Server
+// Start server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}. Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-process.on('unhandledRejection', (err) => {
-    console.error(`Unhandled Rejection: ${err.message}`);
-    server.close(() => process.exit(1));
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT} (${process.env.NODE_ENV})`);
 });

@@ -1,82 +1,57 @@
-const User = require('../models/User');
-const { validationResult } = require('express-validator');
-
-exports.getUsers = async (req, res, next) => {
-  try {
-    const users = await User.find().select('-password');
-    res.status(200).json({ success: true, users });
-  } catch (error) {
-    next(error);
-  }
-};
-
+const User = require("../models/User");
+const { validationResult } = require("express-validator");
 
 exports.getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      const error = new Error('User not found');
-      error.statusCode = 404;
-      return next(error);
-    }
-    res.status(200).json({ success: true, user });
-  } catch (error) {
-    next(error);
+    if (!req.user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const user = {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+      createdAt: req.user.createdAt,
+    };
+
+    return res.status(200).json({ success: true, user });
+  } catch (err) {
+    next(err);
   }
 };
 
+exports.getUsers = async (req, res, next) => {
+  try {
+    const users = await User.find().select("-password");
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    // Validation result
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400);
-      throw new Error(errors.array().map(e => e.msg).join(', '));
-    }
-
     const user = await User.findById(req.user.id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error('User not found');
-    }
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     const { name, email, password } = req.body;
-
     if (name) user.name = name;
     if (email) user.email = email;
     if (password) user.password = password;
 
-    const updatedUser = await user.save();
-
-    res.status(200).json({
-      success: true,
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-      },
-    });
-  } catch (error) {
-    next(error);
+    const updated = await user.save();
+    res.status(200).json({ success: true, user: { id: updated._id, name: updated.name, email: updated.email, role: updated.role } });
+  } catch (err) {
+    next(err);
   }
 };
 
 exports.deleteProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error('User not found');
-    }
-
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
     await user.deleteOne();
-
-    res.status(200).json({ success: true, message: 'User account deleted' });
-  } catch (error) {
-    next(error);
+    res.status(200).json({ success: true, message: "User deleted" });
+  } catch (err) {
+    next(err);
   }
 };
