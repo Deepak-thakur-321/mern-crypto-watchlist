@@ -14,7 +14,9 @@ import {
    FaBell,
    FaFilter,
    FaDollarSign,
-   FaTag
+   FaTag,
+   FaBars,
+   FaTimes
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -46,12 +48,12 @@ const Loader = ({ message = "Loading..." }) => (
 );
 
 const StatCard = ({ title, value, icon: Icon, gradient, trend }) => (
-   <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-6 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer`}>
+   <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer`}>
       <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/10 blur-2xl"></div>
       <div className="relative">
-         <div className="flex items-start justify-between mb-4">
-            <div className="p-3 rounded-lg bg-white/20 backdrop-blur-sm">
-               <Icon className="text-2xl text-white" />
+         <div className="flex items-start justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-white/20 backdrop-blur-sm">
+               <Icon className="text-xl sm:text-2xl text-white" />
             </div>
             {trend && (
                <span className="text-xs font-semibold text-white/90 bg-white/20 px-2 py-1 rounded-full">
@@ -59,24 +61,24 @@ const StatCard = ({ title, value, icon: Icon, gradient, trend }) => (
                </span>
             )}
          </div>
-         <h3 className="text-sm font-medium text-white/80 mb-1">{title}</h3>
-         <p className="text-3xl font-bold text-white">{value}</p>
+         <h3 className="text-xs sm:text-sm font-medium text-white/80 mb-1">{title}</h3>
+         <p className="text-2xl sm:text-3xl font-bold text-white">{value}</p>
       </div>
    </div>
 );
 
 const EmptyState = ({ onAddClick }) => (
-   <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="w-32 h-32 mb-6 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-         <FaChartLine className="text-5xl text-indigo-600" />
+   <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
+      <div className="w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+         <FaChartLine className="text-4xl sm:text-5xl text-indigo-600" />
       </div>
-      <h3 className="text-2xl font-bold text-gray-800 mb-2">Start Your Watchlist</h3>
-      <p className="text-gray-500 text-center max-w-md mb-6">
+      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 text-center">Start Your Watchlist</h3>
+      <p className="text-sm sm:text-base text-gray-500 text-center max-w-md mb-4 sm:mb-6 px-4">
          Track your favorite stocks and crypto assets. Set price alerts and never miss an opportunity.
       </p>
       <button
          onClick={onAddClick}
-         className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+         className="px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 text-sm sm:text-base"
       >
          <FaPlus /> Add Your First Item
       </button>
@@ -94,6 +96,7 @@ export default function Dashboard() {
    const [confirmOpen, setConfirmOpen] = useState(false);
    const [deletingItem, setDeletingItem] = useState(null);
    const [referralInput, setReferralInput] = useState("");
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
 
    const fetchItems = async () => {
@@ -104,20 +107,6 @@ export default function Dashboard() {
       } catch (err) {
          dispatch({ type: "FETCH_ERROR", payload: err.message });
          toast.error(err.response?.data?.message || "Failed to load watchlist");
-      }
-   };
-
-   const handleReferralSubmit = () => {
-      const code = referralInput.trim();
-      if (!code) return toast.error("Please enter a referral code.");
-
-      const validCodes = ["DUMMY123", "MYCODE", "TEST2025"];
-
-      if (validCodes.includes(code.toUpperCase())) {
-         toast.success("Referral applied! Premium perks unlocked.");
-         setReferralInput(""); 
-      } else {
-         toast.error("Invalid referral code.");
       }
    };
 
@@ -190,6 +179,7 @@ export default function Dashboard() {
    const handleLogout = async () => {
       await logout();
       toast.success("Logged out successfully");
+      setMobileMenuOpen(false);
    };
 
    // Calculate stats
@@ -201,32 +191,34 @@ export default function Dashboard() {
 
    return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/20">
-         {/* Premium Header */}
+         {/* Premium Header - Fully Responsive */}
          <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-lg bg-white/90">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-               <div className="flex items-center justify-between h-16">
-                  {/* Logo & Title */}
-                  <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                        <FaChartLine className="text-white text-xl" />
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+               <div className="flex items-center justify-between h-14 sm:h-16">
+                  {/* Logo & Title - Responsive */}
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
+                        <FaChartLine className="text-white text-base sm:text-xl" />
                      </div>
-                     <div>
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                     <div className="min-w-0">
+                        <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent truncate">
                            WatchList Pro
                         </h1>
-                        <p className="text-xs text-gray-500">Welcome back, {user?.name?.split(' ')[0] || 'User'}</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500 truncate hidden xs:block">
+                           Welcome, {user?.name?.split(' ')[0] || 'User'}
+                        </p>
                      </div>
                   </div>
 
-                  {/* Right Actions */}
-                  <div className="flex items-center gap-3">
+                  {/* Desktop Actions */}
+                  <div className="hidden md:flex items-center gap-3">
                      <button className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
                         <FaBell className="text-xl" />
                      </button>
 
                      <Link
                         to="/referral"
-                        className="hidden sm:flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-all"
+                        className="flex items-center gap-2 px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium transition-all"
                      >
                         Referral
                      </Link>
@@ -234,10 +226,9 @@ export default function Dashboard() {
                      <Link
                         to="/profile"
                         className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all group"
-                        aria-label="Go to profile"
                      >
                         <FaRegUserCircle className="text-2xl text-gray-600 group-hover:text-indigo-600 transition-colors" />
-                        <span className="hidden md:inline text-sm font-medium text-gray-700 group-hover:text-indigo-600">Profile</span>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-indigo-600">Profile</span>
                      </Link>
 
                      <button
@@ -247,146 +238,179 @@ export default function Dashboard() {
                         Logout
                      </button>
                   </div>
+
+                  {/* Mobile Menu Button */}
+                  <button
+                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                     className="md:hidden p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                  >
+                     {mobileMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+                  </button>
                </div>
+
+               {/* Mobile Menu Dropdown */}
+               {mobileMenuOpen && (
+                  <div className="md:hidden border-t border-gray-200 py-3 space-y-2 animate-slideDown">
+                     <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 rounded-lg transition-all"
+                     >
+                        <FaRegUserCircle className="text-xl text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">Profile</span>
+                     </Link>
+                     
+                     <Link
+                        to="/referral"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50 rounded-lg transition-all"
+                     >
+                        <FaTag className="text-xl text-indigo-600" />
+                        <span className="text-sm font-medium text-indigo-600">Referral Program</span>
+                     </Link>
+
+                     <button
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 rounded-lg transition-all"
+                     >
+                        <FaBell className="text-xl text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">Notifications</span>
+                     </button>
+
+                     <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 bg-red-50 hover:bg-red-100 rounded-lg transition-all"
+                     >
+                        <span className="text-sm font-medium text-red-600">Logout</span>
+                     </button>
+                  </div>
+               )}
             </div>
          </div>
 
          {/* Main Content */}
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+            {/* Stats Cards - Fully Responsive */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
                <StatCard
                   title="Total Items"
                   value={totalItems}
                   icon={FaChartLine}
                   gradient="from-indigo-500 to-indigo-600"
-                  trend={totalItems > 0 ? `+${totalItems}` : "Start now"}
+                  trend={totalItems > 0 ? `+${totalItems}` : "Start"}
                />
                <StatCard
                   title="Active Alerts"
                   value={withAlerts}
                   icon={FaBell}
                   gradient="from-purple-500 to-purple-600"
-                  trend={withAlerts > 0 ? "Monitoring" : "Set alerts"}
+                  trend={withAlerts > 0 ? "Active" : "Set"}
                />
                <StatCard
-                  title="Avg Target Price"
+                  title="Avg Price"
                   value={`$${avgPrice}`}
                   icon={FaFilter}
                   gradient="from-pink-500 to-pink-600"
-                  trend={avgPrice > 0 ? "Active" : "N/A"}
+                  trend={avgPrice > 0 ? "Live" : "N/A"}
                />
             </div>
 
-
-            {/* Referral Perks Section */}
-            <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-               <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  Referral Perks
+            {/* Referral Perks Section - Responsive */}
+            <div className="mb-4 sm:mb-6 lg:mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+               <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  🎁 Referral Perks
                </h2>
                {user?.hasReferral ? (
-                  <div className="text-gray-700">
+                  <div className="text-gray-700 text-sm sm:text-base">
                      <p className="mb-2">
-                        You’ve unlocked <span className="font-semibold text-indigo-600">premium features</span> using referral code{" "}
-                        <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{user.referralCode}</span>.
+                        You've unlocked <span className="font-semibold text-indigo-600">premium features</span> using code{" "}
+                        <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs sm:text-sm">{user.referralCode}</span>.
                      </p>
-                     <p className="text-sm text-gray-500">
-                        Explore your extra perks on your <Link to="/profile" className="text-indigo-600 hover:underline">Profile</Link>.
+                     <p className="text-xs sm:text-sm text-gray-500">
+                        Explore perks on your <Link to="/profile" className="text-indigo-600 hover:underline">Profile</Link>.
                      </p>
                   </div>
                ) : (
                   <div>
-                     <p className="text-gray-600 mb-3">
-                        Paste a valid referral code to unlock premium features like bonus alerts & early access.
+                     <p className="text-gray-600 mb-3 text-xs sm:text-sm">
+                        Enter a referral code to unlock premium features like bonus alerts & early access.
                      </p>
-                     <div className="flex flex-col sm:flex-row gap-3 items-center">
+                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <input
                            type="text"
-                           placeholder="Enter referral code..."
+                           placeholder="Enter code..."
                            value={referralInput}
                            onChange={(e) => setReferralInput(e.target.value)}
-                           className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                           className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-gray-300 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                         />
                         <button
                            onClick={() => {
                               const code = referralInput.trim().toUpperCase();
                               const validCodes = ["DUMMY123", "MYCODE", "TEST2025"];
-                              if (!code) return toast.error("Please enter a referral code.");
+                              if (!code) return toast.error("Enter a code");
                               if (validCodes.includes(code)) {
-                                 toast.success("Referral applied! Premium perks unlocked.");
-                                 setReferralInput(""); // Clear input on success
+                                 toast.success("Premium unlocked!");
+                                 setReferralInput("");
                               } else {
-                                 toast.error("Invalid referral code.");
+                                 toast.error("Invalid code");
                               }
                            }}
-                           className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
+                           className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm sm:text-base font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
                         >
-                           Apply Code
+                           Apply
                         </button>
-
-                        <ToastContainer
-                           position="top-right"
-                           autoClose={3000}
-                           hideProgressBar={false}
-                           newestOnTop={false}
-                           closeOnClick
-                           rtl={false}
-                           pauseOnFocusLoss
-                           draggable
-                           pauseOnHover
-                        />
                      </div>
                   </div>
                )}
             </div>
 
-
-            {/* Controls Bar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-               <div className="flex flex-col sm:flex-row gap-4 items-center">
+            {/* Controls Bar - Fully Responsive */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
                   {/* Search */}
-                  <div className="relative flex-1 w-full sm:w-auto">
-                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <div className="relative flex-1 w-full">
+                     <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm sm:text-base" />
                      <input
                         type="text"
-                        placeholder="Search watchlist..."
+                        placeholder="Search..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-lg border border-gray-300 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                      />
                   </div>
 
-                  {/* Sort */}
-                  <select
-                     value={sortBy}
-                     onChange={(e) => setSortBy(e.target.value)}
-                     className="px-4 py-2.5 rounded-lg border border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white cursor-pointer w-full sm:w-auto transition-all"
-                  >
-                     <option value="newest">🕒 Newest First</option>
-                     <option value="price-desc">📈 Price: High → Low</option>
-                     <option value="price-asc">📉 Price: Low → High</option>
-                  </select>
+                  {/* Sort & Add - Side by side on mobile */}
+                  <div className="flex gap-2 sm:gap-3">
+                     <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-gray-300 text-xs sm:text-base text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none bg-white cursor-pointer transition-all"
+                     >
+                        <option value="newest">🕒 Newest</option>
+                        <option value="price-desc">📈 High → Low</option>
+                        <option value="price-asc">📉 Low → High</option>
+                     </select>
 
-                  {/* Add Button */}
-                  <button
-                     onClick={openCreate}
-                     className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap"
-                  >
-                     <FaPlus /> Add Item
-                  </button>
+                     <button
+                        onClick={openCreate}
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap"
+                     >
+                        <FaPlus className="text-xs sm:text-sm" />
+                        <span className="hidden xs:inline">Add</span>
+                     </button>
+                  </div>
                </div>
             </div>
 
-            {/* Watchlist Grid */}
+            {/* Watchlist Grid - Responsive */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                {state.loading ? (
-                  <Loader message="Loading your watchlist..." />
+                  <Loader message="Loading..." />
                ) : filtered.length === 0 ? (
                   search ? (
                      <div className="text-center py-12 px-4">
-                        <div className="text-6xl mb-4">🔍</div>
-                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No results found</h3>
-                        <p className="text-gray-500">Try adjusting your search terms</p>
+                        <div className="text-5xl sm:text-6xl mb-4">🔍</div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No results</h3>
+                        <p className="text-sm sm:text-base text-gray-500">Try different terms</p>
                      </div>
                   ) : (
                      <EmptyState onAddClick={openCreate} />
@@ -413,69 +437,65 @@ export default function Dashboard() {
             </div>
          </div>
 
-         {/* Enhanced Modal */}
+         {/* Enhanced Modal - Responsive */}
          <Modal
             open={modalOpen}
             onClose={() => setModalOpen(false)}
             title={editingItem ? "✏️ Edit Item" : "➕ Add New Item"}
          >
-            <form onSubmit={handleSubmit(submitForm)} className="space-y-5">
+            <form onSubmit={handleSubmit(submitForm)} className="space-y-4 sm:space-y-5">
                {/* Asset Name */}
                <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="name" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                      Asset Name
                   </label>
                   <div className="relative">
                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaChartLine className="text-gray-400" />
+                        <FaChartLine className="text-gray-400 text-sm" />
                      </div>
                      <input
                         id="name"
                         type="text"
-                        placeholder="e.g., Bitcoin, Apple Inc."
-                        {...register("name", { required: "Name is required" })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        placeholder="e.g., Bitcoin"
+                        {...register("name", { required: "Name required" })}
+                        className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                      />
                   </div>
                   {errors.name && (
-                     <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
-                        <span>⚠</span> {errors.name.message}
-                     </p>
+                     <p className="text-xs text-red-600 mt-1.5">⚠ {errors.name.message}</p>
                   )}
                </div>
 
                {/* Symbol */}
                <div>
-                  <label htmlFor="symbol" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="symbol" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                      Symbol / Ticker
                   </label>
                   <div className="relative">
                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaTag className="text-gray-400" />
+                        <FaTag className="text-gray-400 text-sm" />
                      </div>
                      <input
                         id="symbol"
                         type="text"
-                        placeholder="e.g., BTC, AAPL"
-                        {...register("symbol", { required: "Symbol is required" })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white uppercase focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        placeholder="e.g., BTC"
+                        {...register("symbol", { required: "Symbol required" })}
+                        className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white uppercase focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                      />
                   </div>
                   {errors.symbol && (
-                     <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
-                        <span>⚠</span> {errors.symbol.message}
-                     </p>
+                     <p className="text-xs text-red-600 mt-1.5">⚠ {errors.symbol.message}</p>
                   )}
                </div>
 
                {/* Price Alert */}
                <div>
-                  <label htmlFor="priceAlert" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="priceAlert" className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                      Price Alert (Optional)
                   </label>
                   <div className="relative">
                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaDollarSign className="text-gray-400" />
+                        <FaDollarSign className="text-gray-400 text-sm" />
                      </div>
                      <input
                         id="priceAlert"
@@ -483,34 +503,32 @@ export default function Dashboard() {
                         step="any"
                         placeholder="0.00"
                         {...register("priceAlert", {
-                           validate: v => v === "" || (!isNaN(Number(v)) && Number(v) >= 0) || "Must be a positive number"
+                           validate: v => v === "" || (!isNaN(Number(v)) && Number(v) >= 0) || "Must be positive"
                         })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                      />
                   </div>
                   {errors.priceAlert && (
-                     <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
-                        <span>⚠</span> {errors.priceAlert.message}
-                     </p>
+                     <p className="text-xs text-red-600 mt-1.5">⚠ {errors.priceAlert.message}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1.5">💡 Get notified when price reaches this target</p>
+                  <p className="text-xs text-gray-500 mt-1.5">💡 Get notified at target price</p>
                </div>
 
                {/* Action Buttons */}
-               <div className="flex gap-3 pt-4">
+               <div className="flex gap-2 sm:gap-3 pt-2 sm:pt-4">
                   <button
                      type="button"
                      onClick={() => setModalOpen(false)}
-                     className="flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition-all"
+                     className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 border-gray-300 text-sm sm:text-base text-gray-700 hover:bg-gray-50 font-medium transition-all"
                   >
                      Cancel
                   </button>
                   <button
                      type="submit"
                      disabled={isSubmitting}
-                     className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                     className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm sm:text-base font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                     {isSubmitting ? "Saving..." : editingItem ? "Update" : "Add to Watchlist"}
+                     {isSubmitting ? "..." : editingItem ? "Update" : "Add"}
                   </button>
                </div>
             </form>
@@ -520,21 +538,21 @@ export default function Dashboard() {
             open={confirmOpen}
             onClose={() => setConfirmOpen(false)}
             onConfirm={confirmDelete}
-            description={`Are you sure you want to remove "${deletingItem?.name}" (${deletingItem?.symbol}) from your watchlist?`}
+            description={`Remove "${deletingItem?.name}" (${deletingItem?.symbol})?`}
          />
 
-         <style>{`
-            @keyframes fadeIn {
-               from {
-                  opacity: 0;
-                  transform: translateY(10px);
-               }
-               to {
-                  opacity: 1;
-                  transform: translateY(0);
-               }
-            }
-         `}</style>
+         <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            className="text-sm"
+         />
       </div>
    );
 }
