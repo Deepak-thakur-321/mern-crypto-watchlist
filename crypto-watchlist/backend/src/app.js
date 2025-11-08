@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require("cors");
+// const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
@@ -26,10 +26,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(helmet());
-app.use(cors({
-   origin: process.env.FRONTEND_URL || "http://localhost:5173",
-   credentials: true,
-}));
+// app.use(cors({
+//    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+//    credentials: true,
+// }));
 
 // HTTP request logger (dev only)
 if (process.env.NODE_ENV === "development") {
