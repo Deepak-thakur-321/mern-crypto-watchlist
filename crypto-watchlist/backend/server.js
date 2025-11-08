@@ -14,27 +14,36 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(helmet()); 
+app.use(helmet());
 
-// CORS setup
+const frontendUrl = process.env.FRONTEND_URL;
+
+const normalizeUrl = (url) => url ? url.replace(/\/+$/, "") : null;
+
 const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    process.env.FRONTEND_URL, 
-].filter(Boolean);
+
+    normalizeUrl(frontendUrl),
+    frontendUrl, 
+].filter(Boolean); 
 
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.some(allowedOrigin => {
+            const normalizedOrigin = normalizeUrl(origin);
+            return normalizedOrigin === normalizeUrl(allowedOrigin);
+        })) {
             callback(null, true);
         } else {
             console.warn(`CORS blocked: ${origin}`);
-            callback(new Error("Not allowed by CORS"));
+            callback(new Error("Not allowed by CORS: Origin mismatch."));
         }
     },
-    credentials: true, 
+    // REQUIRED for cross-domain cookie authentication
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     exposedHeaders: ["set-cookie"],
