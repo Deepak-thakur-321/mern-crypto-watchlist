@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-// import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 const NotFound = () => {
    const navigate = useNavigate();

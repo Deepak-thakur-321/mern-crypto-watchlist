@@ -1,14 +1,20 @@
-import { createContext, useContext, useReducer, useEffect } from "react";
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance";
 
-// ---------------- Reducer ----------------
+// Context setup
+
+const AuthContext = createContext();
+export const useAuth = () => useContext(AuthContext);
+
+
+// Initial State & Reducer
 const initialState = {
    user: null,
    loading: true,
    error: null,
 };
 
-function authReducer(state, action) {
+function reducer(state, action) {
    switch (action.type) {
       case "SET_USER":
          return { ...state, user: action.payload, loading: false, error: null };
@@ -23,68 +29,85 @@ function authReducer(state, action) {
    }
 }
 
-// ---------------- Context ----------------
-const AuthContext = createContext();
-export const useAuth = () => useContext(AuthContext);
+
+// Provider Component
 
 export const AuthProvider = ({ children }) => {
-   const [state, dispatch] = useReducer(authReducer, initialState);
+   const [state, dispatch] = useReducer(reducer, initialState);
 
-   // ✅ Fetch user profile if session cookie or token exists
+   
+   // Fetch user profile
    useEffect(() => {
       const fetchProfile = async () => {
+         dispatch({ type: "LOADING" });
          try {
-            const { data } = await axiosInstance.get("/users/profile");
+            const { data } = await axiosInstance.get("/users/profile", {
+               withCredentials: true,
+            });
             dispatch({ type: "SET_USER", payload: data.user });
-         } catch (error) {
-            console.warn("Profile fetch failed:", error.response?.data || error.message);
+         } catch (err) {
+            console.warn(" Profile fetch failed:", err.response?.data || err.message);
             dispatch({ type: "LOGOUT" });
          }
       };
-      fetchProfile();
+
+      
+      const timeout = setTimeout(fetchProfile, 400);
+      return () => clearTimeout(timeout);
    }, []);
 
-   // ✅ Login
+   
+   // Login User
+
    const login = async (credentials) => {
       dispatch({ type: "LOADING" });
       try {
-         const { data } = await axiosInstance.post("/auth/login", credentials);
-         localStorage.setItem("token", data.token);
+         const { data } = await axiosInstance.post("/auth/login", credentials, {
+            withCredentials: true,
+         });
          dispatch({ type: "SET_USER", payload: data.user });
-      } catch (error) {
-         const message = error.response?.data?.message || "Login failed. Please try again.";
-         dispatch({ type: "SET_ERROR", payload: message });
+         return { success: true };
+      } catch (err) {
+         const msg = err.response?.data?.message || "Login failed";
+         dispatch({ type: "SET_ERROR", payload: msg });
+         return { success: false, message: msg };
       }
    };
 
-   // ✅ Register
+
+   // Register User
+   
    const register = async (formData) => {
       dispatch({ type: "LOADING" });
       try {
-         const { data } = await axiosInstance.post("/auth/register", formData);
-         localStorage.setItem("token", data.token);
+         const { data } = await axiosInstance.post("/auth/register", formData, {
+            withCredentials: true,
+         });
          dispatch({ type: "SET_USER", payload: data.user });
-      } catch (error) {
-         const message = error.response?.data?.message || "Registration failed. Please try again.";
-         dispatch({ type: "SET_ERROR", payload: message });
+         return { success: true };
+      } catch (err) {
+         const msg = err.response?.data?.message || "Registration failed";
+         dispatch({ type: "SET_ERROR", payload: msg });
+         return { success: false, message: msg };
       }
    };
 
-   // ✅ Logout
+  
+   // Logout User
+  
    const logout = async () => {
       try {
-         await axiosInstance.post("/auth/logout");
-         localStorage.removeItem("token");
+         await axiosInstance.post("/auth/logout", {}, { withCredentials: true });
+      } catch (err) {
+         console.warn("Logout API failed:", err.message);
+      } finally {
          dispatch({ type: "LOGOUT" });
-      } catch (error) {
-         console.error("Logout failed:", error);
       }
    };
 
-   // ✅ Clear error manually (for UX)
-   const clearError = () => dispatch({ type: "SET_ERROR", payload: null });
+   const clearError = useCallback(() => dispatch({ type: "SET_ERROR", payload: null }), []);
 
-   const value = {
+   const contextValue = {
       user: state.user,
       loading: state.loading,
       error: state.error,
@@ -95,5 +118,5 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!state.user,
    };
 
-   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };

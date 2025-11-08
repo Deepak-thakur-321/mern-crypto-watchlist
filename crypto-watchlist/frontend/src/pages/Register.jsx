@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
+import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 const PasswordRequirements = ({ password }) => {
    const tests = [
@@ -13,32 +13,42 @@ const PasswordRequirements = ({ password }) => {
    ];
 
    return (
-      <ul className="mt-2 space-y-1 text-sm">
-         {tests.map((t) => (
-            <li key={t.label} className={`flex items-center gap-2 ${t.ok ? "text-green-600" : "text-gray-500"}`}>
-               <svg
-                  className={`w-4 h-4 shrink-0 ${t.ok ? "opacity-100" : "opacity-30"}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+      <div className="mt-3 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+         <p className="text-xs font-semibold text-slate-300 mb-2">Password Requirements:</p>
+         <ul className="space-y-1.5">
+            {tests.map((t) => (
+               <li
+                  key={t.label}
+                  className={`flex items-center gap-2 text-xs transition-colors ${t.ok ? "text-emerald-400" : "text-slate-400"
+                     }`}
                >
                   {t.ok ? (
-                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 01.083 1.32l-.083.094L8 15l-4.707-4.707a1 1 0 011.32-1.497l.094.083L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                     <FaCheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
                   ) : (
-                     <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11H9v4h2V7zm0 6H9v2h2v-2z" />
+                     <FaTimesCircle className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
                   )}
-               </svg>
-               <span>{t.label}</span>
-            </li>
-         ))}
-      </ul>
+                  <span>{t.label}</span>
+               </li>
+            ))}
+         </ul>
+      </div>
    );
 };
 
 export default function Register() {
    const { register: registerAction, user, error, loading } = useAuth();
+   // Get referral code from URL
+   const searchParams = new URLSearchParams(window.location.search);
+   const refCode = searchParams.get('ref');
+
    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
       mode: "onTouched",
-      defaultValues: { name: "", email: "", password: "" },
+      defaultValues: {
+         name: "",
+         email: "",
+         password: "",
+         referralCode: refCode || ""
+      },
    });
 
    const navigate = useNavigate();
@@ -46,15 +56,13 @@ export default function Register() {
 
    const passwordValue = watch("password", "");
 
-   // If user becomes logged-in (AuthContext sets user), redirect to dashboard
    useEffect(() => {
       if (user) {
-         toast.success("Registration successful — welcome!");
-         navigate("/", { replace: true });
+         toast.success("Registration successful — welcome! 🎉");
+         navigate("/dashboard", { replace: true });
       }
    }, [user, navigate]);
 
-   // If AuthContext has an error, show toast
    useEffect(() => {
       if (error) {
          toast.error(error);
@@ -62,117 +70,241 @@ export default function Register() {
    }, [error]);
 
    const onSubmit = async (formData) => {
-      await registerAction(formData);
+      try {
+         await registerAction(formData);
+      } catch (err) {
+         toast.error("Registration failed. Please try again.");
+      }
    };
 
-   return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-600 to-indigo-700 flex items-center justify-center p-6">
-         <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8">
-            <div className="mb-6 text-center">
-               <h1 className="text-3xl font-extrabold text-slate-800">Create your account</h1>
-               <p className="text-slate-500 mt-1">Quick setup — secure authentication powered by HttpOnly cookies</p>
+
+   if (loading) {
+      return (
+         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+               <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+               <p className="text-gray-300 font-medium">Checking authentication...</p>
             </div>
+         </div>
+      );
+   }
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-               {/* Name */}
-               <label className="block">
-                  <span className="text-sm font-medium text-slate-700">Full name</span>
-                  <input
-                     type="text"
-                     placeholder="Your full name"
-                     {...register("name", { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } })}
-                     className={`mt-2 w-full rounded-lg border px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${errors.name ? "border-red-300" : "border-slate-200"}`}
-                     aria-invalid={errors.name ? "true" : "false"}
-                     aria-describedby={errors.name ? "name-error" : undefined}
-                  />
-                  {errors.name && <p id="name-error" className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
-               </label>
+   return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 flex items-center justify-center p-6">
+         {/* Background decoration */}
+         <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+         </div>
 
-               {/* Email */}
-               <label className="block">
-                  <span className="text-sm font-medium text-slate-700">Email address</span>
-                  <input
-                     type="email"
-                     placeholder="you@example.com"
-                     {...register("email", {
-                        required: "Email is required",
-                        pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email" },
-                     })}
-                     className={`mt-2 w-full rounded-lg border px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${errors.email ? "border-red-300" : "border-slate-200"}`}
-                     aria-invalid={errors.email ? "true" : "false"}
-                     aria-describedby={errors.email ? "email-error" : undefined}
-                  />
-                  {errors.email && <p id="email-error" className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
-               </label>
+         <div className="relative w-full max-w-md">
+            {/* Card */}
+            <div className="bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+               {/* Header */}
+               <div className="mb-8 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                     <FaUser className="text-white text-2xl" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-white mb-2">
+                     Create Account
+                  </h1>
+                  <p className="text-slate-400 text-sm">
+                     Join us and start tracking your watchlist
+                  </p>
+               </div>
 
-               {/* Password */}
-               <label className="block">
-                  <div className="flex justify-between items-center">
-                     <span className="text-sm font-medium text-slate-700">Password</span>
-                     <button
-                        type="button"
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="text-xs text-slate-500 hover:text-slate-700"
+               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                  {/* Name Field */}
+                  <div>
+                     <label
+                        htmlFor="name"
+                        className="block text-sm font-semibold text-slate-300 mb-2"
                      >
-                        {showPassword ? "Hide" : "Show"}
-                     </button>
+                        Full Name
+                     </label>
+                     <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                           <FaUser className="text-slate-500" />
+                        </div>
+                        <input
+                           id="name"
+                           type="text"
+                           placeholder="John Doe"
+                           autoComplete="name"
+                           {...register("name", {
+                              required: "Name is required",
+                              minLength: { value: 2, message: "Name must be at least 2 characters" }
+                           })}
+                           className={`w-full pl-10 pr-4 py-3 rounded-lg bg-slate-700 text-white placeholder-slate-400 border ${errors.name
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-slate-600 focus:ring-indigo-500"
+                              } focus:outline-none focus:ring-2 transition-all`}
+                           aria-invalid={errors.name ? "true" : "false"}
+                        />
+                     </div>
+                     {errors.name && (
+                        <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                           <span>⚠</span> {errors.name.message}
+                        </p>
+                     )}
                   </div>
 
-                  <div className="relative mt-2">
-                     <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a strong password"
-                        {...register("password", {
-                           required: "Password is required",
-                           minLength: { value: 8, message: "Password must be at least 8 characters" },
-                           validate: {
-                              hasUpper: (v) => /[A-Z]/.test(v) || "Password must contain at least one uppercase letter",
-                              hasNumber: (v) => /\d/.test(v) || "Password must contain at least one number",
-                           },
-                        })}
-                        className={`w-full rounded-lg border px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${errors.password ? "border-red-300" : "border-slate-200"}`}
-                        aria-invalid={errors.password ? "true" : "false"}
-                        aria-describedby={errors.password ? "password-error" : undefined}
-                     />
+                  {/* Email Field */}
+                  <div>
+                     <label
+                        htmlFor="email"
+                        className="block text-sm font-semibold text-slate-300 mb-2"
+                     >
+                        Email Address
+                     </label>
+                     <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                           <FaEnvelope className="text-slate-500" />
+                        </div>
+                        <input
+                           id="email"
+                           type="email"
+                           placeholder="you@example.com"
+                           autoComplete="email"
+                           {...register("email", {
+                              required: "Email is required",
+                              pattern: {
+                                 value: /^\S+@\S+\.\S+$/,
+                                 message: "Enter a valid email address"
+                              },
+                           })}
+                           className={`w-full pl-10 pr-4 py-3 rounded-lg bg-slate-700 text-white placeholder-slate-400 border ${errors.email
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-slate-600 focus:ring-indigo-500"
+                              } focus:outline-none focus:ring-2 transition-all`}
+                           aria-invalid={errors.email ? "true" : "false"}
+                        />
+                     </div>
+                     {errors.email && (
+                        <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                           <span>⚠</span> {errors.email.message}
+                        </p>
+                     )}
                   </div>
 
-                  {errors.password && <p id="password-error" className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
+                  {/* Password Field */}
+                  <div>
+                     <label
+                        htmlFor="password"
+                        className="block text-sm font-semibold text-slate-300 mb-2"
+                     >
+                        Password
+                     </label>
+                     <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                           <FaLock className="text-slate-500" />
+                        </div>
+                        <input
+                           id="password"
+                           type={showPassword ? "text" : "password"}
+                           placeholder="Create a strong password"
+                           autoComplete="new-password"
+                           {...register("password", {
+                              required: "Password is required",
+                              minLength: {
+                                 value: 8,
+                                 message: "Password must be at least 8 characters"
+                              },
+                              validate: {
+                                 hasUpper: (v) => /[A-Z]/.test(v) || "Must contain uppercase letter",
+                                 hasNumber: (v) => /\d/.test(v) || "Must contain a number",
+                              },
+                           })}
+                           className={`w-full pl-10 pr-12 py-3 rounded-lg bg-slate-700 text-white placeholder-slate-400 border ${errors.password
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-slate-600 focus:ring-indigo-500"
+                              } focus:outline-none focus:ring-2 transition-all`}
+                           aria-invalid={errors.password ? "true" : "false"}
+                        />
+                        <button
+                           type="button"
+                           onClick={() => setShowPassword(!showPassword)}
+                           className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-300 transition-colors"
+                           aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                           {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                     </div>
+                     {errors.password && (
+                        <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+                           <span>⚠</span> {errors.password.message}
+                        </p>
+                     )}
 
-                  <PasswordRequirements password={passwordValue} />
-               </label>
+                     {/* Password Requirements */}
+                     {passwordValue && <PasswordRequirements password={passwordValue} />}
+                  </div>
 
-               {/* Submit */}
-               <div>
+                  {/* Submit Button */}
                   <button
                      type="submit"
                      disabled={isSubmitting || loading}
-                     className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-semibold transition ${isSubmitting || loading ? "bg-indigo-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
+                     className={`w-full py-3 rounded-lg font-semibold text-white shadow-lg transition-all duration-200 ${isSubmitting || loading
+                        ? "bg-indigo-600/50 cursor-not-allowed"
+                        : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-xl transform hover:-translate-y-0.5"
                         }`}
                   >
                      {isSubmitting || loading ? (
-                        <>
+                        <span className="flex items-center justify-center gap-2">
                            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <circle
+                                 className="opacity-25"
+                                 cx="12"
+                                 cy="12"
+                                 r="10"
+                                 stroke="currentColor"
+                                 strokeWidth="4"
+                                 fill="none"
+                              />
+                              <path
+                                 className="opacity-75"
+                                 fill="currentColor"
+                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                              />
                            </svg>
-                           Creating...
-                        </>
+                           Creating Account...
+                        </span>
                      ) : (
-                        "Create account"
+                        "Create Account"
                      )}
                   </button>
+               </form>
+
+               {/* Footer Links */}
+               <div className="mt-6 text-center">
+                  <p className="text-sm text-slate-400">
+                     Already have an account?{" "}
+                     <Link
+                        to="/login"
+                        className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+                     >
+                        Sign In
+                     </Link>
+                  </p>
                </div>
-            </form>
 
-            <div className="mt-6 text-center text-sm text-slate-600">
-               Already have an account?{" "}
-               <Link to="/login" className="text-indigo-600 font-medium hover:underline">
-                  Sign in
-               </Link>
+               {/* Terms */}
+               <div className="mt-6 text-center">
+                  <p className="text-xs text-slate-500">
+                     By signing up, you agree to our{" "}
+                     <button className="underline hover:text-slate-400 transition-colors">
+                        Terms of Service
+                     </button>
+                     {" "}and{" "}
+                     <button className="underline hover:text-slate-400 transition-colors">
+                        Privacy Policy
+                     </button>
+                  </p>
+               </div>
             </div>
 
-            <div className="mt-6 text-xs text-slate-400 text-center">
-               By signing up you agree to our <span className="underline">Terms</span> & <span className="underline">Privacy</span>.
-            </div>
+            {/* Bottom gradient decoration */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-gradient-to-r from-indigo-600/20 via-purple-600/20 to-indigo-600/20 blur-xl"></div>
          </div>
       </div>
    );
