@@ -1,27 +1,52 @@
-import { useState } from 'react'
-import './index.css'
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import AppLayout from "./components/AppLayout.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+
+// Pages
+import Dashboard from "./pages/Dashboard.jsx";
+import Profile from "./pages/Profile.jsx";
+import Referral from "./pages/Referral.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import NotFound from "./pages/NotFound.jsx";
+
+// src/App.jsx (Refined Version)
+
+// ... (imports remain the same) ...
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          🚀 OneTap Frontend (Tailwind v4)
-        </h1>
-        <button
-          className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg transition mb-4"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-        <p className="text-gray-600">
-          Edit <code className="bg-gray-100 px-2 py-1 rounded text-sm">src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-    </div>
-  )
+    <BrowserRouter>
+      <AuthProvider>
+        <ToastContainer position="bottom-right" autoClose={5000} theme="dark" />
+        <Routes>
+          <Route element={<AppLayout />}>
+
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* 🔒 Protected Routes Group 🔒 */}
+            <Route element={<ProtectedRoute />}>
+              {/* Note: ProtectedRoute is now the parent element */}
+
+              {/* All paths defined here are automatically protected */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/referral" element={<Referral />} />
+            </Route>
+
+            {/* 404 - Should be outside the ProtectedGroup */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
