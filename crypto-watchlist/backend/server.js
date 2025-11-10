@@ -15,58 +15,93 @@ connectDB();
 
 const app = express();
 
-// Helmet for security headers
-app.use(helmet());
+// ✅ Trust proxy (IMPORTANT for Render/Heroku)
+app.set("trust proxy", 1);
 
-// CORS Configuration - PRODUCTION READY
-const frontendUrl = process.env.FRONTEND_URL;
+// ✅ Helmet for security headers
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// ✅ CORS Configuration - PRODUCTION READY
+const isProduction = process.env.NODE_ENV === "production";
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, ''); // Remove trailing slash
 
 const allowedOrigins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     frontendUrl,
-    'https://mern-crypto-watchlist.vercel.app',
 ].filter(Boolean); // Remove undefined values
 
-// CORS middleware - TEMPORARY: Allow all origins for debugging
+console.log(' Allowed Origins:', allowedOrigins);
+console.log(' Environment:', process.env.NODE_ENV);
+
 app.use(cors({
-    origin: true, // Temporarily allow ALL origins
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`Blocked by CORS: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     exposedHeaders: ["Set-Cookie"],
-    maxAge: 86400,
+    maxAge: 86400, // 24 hours preflight cache
 }));
 
-// Parse JSON bodies and cookies
+// ✅ Parse JSON bodies and cookies
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 
-// Logging (dev only)
+// ✅ Logging (dev only)
 if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"));
 }
 
-// Rate limiting
+// ✅ Rate limiting
 app.use(generalLimiter);
 
-// Health check route
+// ✅ Security headers middleware
+app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    next();
+});
+
+// ✅ Health check route
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
         message: "API is running",
+        environment: process.env.NODE_ENV,
         timestamp: new Date().toISOString()
     });
 });
 
-// API routes
+app.get("/api", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "API endpoint is working",
+        timestamp: new Date().toISOString()
+    });
+});
+
+
+// ✅ API routes
 app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/watchlist", require("./src/routes/watchlistRoutes"));
 app.use("/api/referral", referralRoutes);
 
-// 404 handler
+// ✅ 404 handler
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -75,13 +110,14 @@ app.use((req, res) => {
     });
 });
 
-// Global error handler
+// ✅ Global error handler
 app.use(errorHandler);
 
-// Start server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🌐 Allowed Origins:`, allowedOrigins);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Frontend URL: ${frontendUrl || 'Not set'}`);
+    console.log(`CORS configured for:`, allowedOrigins);
 });
