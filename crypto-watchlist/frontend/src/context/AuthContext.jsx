@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance";
+// import { useAuth } from './AuthContext';
 
 // Context setup
 
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
       const fetchProfile = async () => {
          dispatch({ type: "LOADING" });
          try {
-            const { data } = await axiosInstance.get("/users/profile", {
+            const { data } = await axiosInstance.get("/api/users/profile", {
                withCredentials: true,
             });
             if (data?.user) {
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
          }
       };
 
-      fetchProfile(); // call immediately, no timeout
+      fetchProfile();
    }, []);
 
 
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }) => {
    const login = async (credentials) => {
       dispatch({ type: "LOADING" });
       try {
-         const { data } = await axiosInstance.post("/auth/login", credentials, {
+         const { data } = await axiosInstance.post("/api/auth/login", credentials, {
             withCredentials: true,
          });
          dispatch({ type: "SET_USER", payload: data.user });
@@ -83,7 +84,7 @@ export const AuthProvider = ({ children }) => {
    const register = async (formData) => {
       dispatch({ type: "LOADING" });
       try {
-         const { data } = await axiosInstance.post("/auth/register", formData, {
+         const { data } = await axiosInstance.post("/api/auth/register", formData, {
             withCredentials: true,
          });
          dispatch({ type: "SET_USER", payload: data.user });
@@ -100,7 +101,7 @@ export const AuthProvider = ({ children }) => {
 
    const logout = async () => {
       try {
-         await axiosInstance.post("/auth/logout", {}, { withCredentials: true });
+         await axiosInstance.post("/api/auth/logout", {}, { withCredentials: true });
       } catch (err) {
          console.warn("Logout API failed:", err.message);
       } finally {

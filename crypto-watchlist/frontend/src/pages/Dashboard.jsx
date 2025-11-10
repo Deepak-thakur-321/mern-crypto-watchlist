@@ -102,7 +102,7 @@ export default function Dashboard() {
    const fetchItems = async () => {
       dispatch({ type: "FETCH_START" });
       try {
-         const res = await axiosInstance.get("/watchlist");
+         const res = await axiosInstance.get("/api/watchlist");
          dispatch({ type: "FETCH_SUCCESS", payload: res.data.items || [] });
       } catch (err) {
          dispatch({ type: "FETCH_ERROR", payload: err.message });
@@ -149,7 +149,7 @@ export default function Dashboard() {
             });
             toast.success("Item updated successfully!");
          } else {
-            await axiosInstance.post("/watchlist", {
+            await axiosInstance.post("/api/watchlist", {
                ...data,
                priceAlert: data.priceAlert === "" ? undefined : Number(data.priceAlert)
             });

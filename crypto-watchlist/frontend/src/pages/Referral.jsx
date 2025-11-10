@@ -13,7 +13,7 @@ export default function Referral() {
    useEffect(() => {
       const fetchReferral = async () => {
          try {
-            const { data } = await axiosInstance.get("/referral");
+            const { data } = await axiosInstance.get("/api/referral");
             setReferral(data.referral || data.user);
          } catch (err) {
             console.error(err);
