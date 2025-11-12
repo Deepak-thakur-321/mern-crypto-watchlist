@@ -8,100 +8,100 @@ const morgan = require("morgan");
 const connectDB = require("./src/db/db");
 const { generalLimiter } = require("./src/middleware/rateLimiter");
 const errorHandler = require("./src/middleware/errorHandler");
-const referralRoutes = require("./src/routes/referralRoutes");
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// ✅ Trust proxy (IMPORTANT for Render/Heroku)
+// Trust proxy
 app.set("trust proxy", 1);
 
-// ✅ Helmet for security headers
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// ⭐ CORS CONFIGURATION - FIRST
+// server.js - Update CORS section
 
-// ✅ CORS Configuration - PRODUCTION READY
 const isProduction = process.env.NODE_ENV === "production";
-const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, ''); // Remove trailing slash
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
 
 const allowedOrigins = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
+    'http://localhost:5173',      // Vite dev server
+    'http://127.0.0.1:5173',      // Alternative localhost
+    'http://localhost:5000',      // ⭐ Backend itself (for proxy)
     frontendUrl,
-].filter(Boolean); // Remove undefined values
+].filter(Boolean);
 
-console.log(' Allowed Origins:', allowedOrigins);
-console.log(' Environment:', process.env.NODE_ENV);
+console.log('\n🌐 CORS Configuration:');
+console.log('   Environment:', process.env.NODE_ENV);
+console.log('   Allowed Origins:', allowedOrigins);
+
+// server.js - Update CORS section
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, curl)
         if (!origin) return callback(null, true);
 
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.warn(`Blocked by CORS: ${origin}`);
+            console.warn(`❌ Blocked by CORS: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true, 
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    exposedHeaders: ["Set-Cookie"],
-    maxAge: 86400, // 24 hours preflight cache
+    exposedHeaders: ["Set-Cookie"], // ⭐ Important
+    optionsSuccessStatus: 204,
+    preflightContinue: false,
 }));
 
-// ✅ Parse JSON bodies and cookies
+
+// ⭐ COOKIE PARSER - BEFORE ROUTES
+app.use(cookieParser());
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-app.use(cookieParser());
 
-// ✅ Logging (dev only)
+// Helmet
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, 
+}));
+
+// Logging
 if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"));
 }
 
-// ✅ Rate limiting
+// Rate limiting
 app.use(generalLimiter);
 
-// ✅ Security headers middleware
+// ⭐ DEBUG MIDDLEWARE (Remove after testing)
 app.use((req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
+    if (req.path.includes('/auth/')) {
+        console.log("\n--- 🔍 AUTH REQUEST ---");
+        console.log("Path:", req.path);
+        console.log("Method:", req.method);
+        console.log("Cookies:", req.cookies);
+    }
     next();
 });
 
-// ✅ Health check route
+// Health check
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
         message: "API is running",
         environment: process.env.NODE_ENV,
-        timestamp: new Date().toISOString()
     });
 });
 
-app.get("/api", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "API endpoint is working",
-        timestamp: new Date().toISOString()
-    });
-});
-
-
-// ✅ API routes
+// Routes
 app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/watchlist", require("./src/routes/watchlistRoutes"));
-app.use("/api/referral", referralRoutes);
+app.use("/api/referral", require("./src/routes/referralRoutes"));
 
-// ✅ 404 handler
+// 404 handler
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -110,14 +110,17 @@ app.use((req, res) => {
     });
 });
 
-// ✅ Global error handler
+// Error handler
 app.use(errorHandler);
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Frontend URL: ${frontendUrl || 'Not set'}`);
-    console.log(`CORS configured for:`, allowedOrigins);
+    console.log(`\n🚀 Server running on port ${PORT}`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Frontend URL: ${frontendUrl || 'Not set'}`);
+    console.log(`\n📝 Cookie Settings:`);
+    console.log(`   - httpOnly: true`);
+    console.log(`   - secure: ${isProduction}`);
+    console.log(`   - sameSite: ${isProduction ? 'None' : 'Lax'}\n`);
 });

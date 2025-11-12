@@ -3,26 +3,22 @@ const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const User = require("../models/User");
 
-// Generate JWT Helper
-const generateToken = (userId) => {
-   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
-
-// ✅ PRODUCTION-READY Cookie Options
+// Cookie options helper
 const getCookieOptions = () => {
+   const isProduction = process.env.NODE_ENV === "production";
+
    return {
       httpOnly: true,
       secure: false, 
-      sameSite: "Lax", 
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "Lax",
       path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
    };
 };
 
-// ✅ Register User - FIXED
-exports.registerUser = async (req, res, next) => {
+// ✅ REGISTER USER
+exports.registerUser = async (req, res) => {
    try {
-      // Validation check
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
          return res.status(400).json({
@@ -33,14 +29,7 @@ exports.registerUser = async (req, res, next) => {
 
       const { name, email, password } = req.body;
 
-      if (!name || !email || !password) {
-         return res.status(400).json({
-            success: false,
-            message: "All fields are required"
-         });
-      }
-
-      // Check if user exists
+      // Check existing user
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser) {
          return res.status(400).json({
@@ -49,7 +38,7 @@ exports.registerUser = async (req, res, next) => {
          });
       }
 
-      // Create new user
+      // Create user
       const user = await User.create({
          name,
          email: email.toLowerCase(),
@@ -57,34 +46,42 @@ exports.registerUser = async (req, res, next) => {
       });
 
       // Generate token
-      const token = generateToken(user._id);
+      const token = jwt.sign(
+         { id: user._id },
+         process.env.JWT_SECRET,
+         { expiresIn: "7d" }
+      );
 
-
+      // Set cookie
       const cookieOptions = getCookieOptions();
+      res.cookie("token", token, cookieOptions);
 
-      res
-         .cookie("token", token, cookieOptions)
-         .status(201)
-         .json({
-            success: true,
-            message: "Registration successful",
-            user: {
-               id: user._id,
-               name: user.name,
-               email: user.email,
-               role: user.role || "user"
-            },
-         });
-   } catch (err) {
-      console.error("Registration error:", err);
-      next(err);
+      console.log("✅ REGISTRATION SUCCESS");
+      console.log("User:", user.email);
+      console.log("Cookie Options:", cookieOptions);
+
+      return res.status(201).json({
+         success: true,
+         message: "Registration successful",
+         user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+         },
+      });
+   } catch (error) {
+      console.error("❌ Registration error:", error);
+      return res.status(500).json({
+         success: false,
+         message: error.message || "Registration failed"
+      });
    }
 };
 
-// ✅ Login User - FIXED
-exports.loginUser = async (req, res, next) => {
+// ✅ LOGIN USER - FIXED matchPassword
+exports.loginUser = async (req, res) => {
    try {
-      // Validation check
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
          return res.status(400).json({
@@ -95,75 +92,83 @@ exports.loginUser = async (req, res, next) => {
 
       const { email, password } = req.body;
 
-      if (!email || !password) {
-         return res.status(400).json({
-            success: false,
-            message: "Email and password required"
-         });
-      }
-
-      // Find user with password
       const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
 
       if (!user) {
+         console.log("❌ User not found:", email);
          return res.status(401).json({
             success: false,
-            message: "Invalid credentials"
+            message: "Invalid email or password"
          });
       }
 
-      // Verify password
-      const isPasswordValid = await user.matchPassword(password);
-      if (!isPasswordValid) {
+      const isPasswordCorrect = await user.matchPassword(password);
+
+      if (!isPasswordCorrect) {
+         console.log("❌ Password incorrect for:", email);
          return res.status(401).json({
             success: false,
-            message: "Invalid credentials"
+            message: "Invalid email or password"
          });
       }
 
-      // Generate token
-      const token = generateToken(user._id);
+      const token = jwt.sign(
+         { id: user._id },
+         process.env.JWT_SECRET,
+         { expiresIn: "7d" }
+      );
 
-      // ✅ Set cookie with production-ready options
       const cookieOptions = getCookieOptions();
 
-      res
-         .cookie("token", token, cookieOptions)
-         .status(200)
-         .json({
-            success: true,
-            message: "Login successful",
-            user: {
-               id: user._id,
-               name: user.name,
-               email: user.email,
-               role: user.role || "user",
-            },
-         });
+      // ⭐ Set cookie
+      res.cookie("token", token, cookieOptions);
+
+      // ⭐ Debug: Check if header is set
+      console.log("✅ LOGIN SUCCESS");
+      console.log("User:", user.email);
+      console.log("Cookie Options:", cookieOptions);
+      console.log("Response Headers:", res.getHeaders()); // ⭐ NEW
+
+      return res.status(200).json({
+         success: true,
+         message: "Login successful",
+         user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+         },
+      });
    } catch (error) {
-      console.error("Login error:", error);
-      next(error);
+      console.error("❌ LOGIN ERROR:", error);
+      return res.status(500).json({
+         success: false,
+         message: error.message || "Login failed"
+      });
    }
 };
 
-// ✅ Logout User - FIXED
-exports.logoutUser = (req, res, next) => {
+// ✅ LOGOUT USER
+exports.logoutUser = (req, res) => {
    try {
-      const cookieOptions = getCookieOptions();
+      res.cookie("token", "", {
+         httpOnly: true,
+         expires: new Date(0),
+         path: "/",
+      });
 
-      res
-         .cookie("token", "", {
-            ...cookieOptions,
-            maxAge: 1, // Expire immediately
-         })
-         .status(200)
-         .json({
-            success: true,
-            message: "Logged out successfully"
-         });
+      console.log("✅ LOGOUT SUCCESS");
+
+      return res.status(200).json({
+         success: true,
+         message: "Logged out successfully",
+      });
    } catch (error) {
       console.error("Logout error:", error);
-      next(error);
+      return res.status(500).json({
+         success: false,
+         message: "Logout failed"
+      });
    }
 };
 

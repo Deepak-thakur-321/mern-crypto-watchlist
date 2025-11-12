@@ -3,12 +3,13 @@ const { body } = require("express-validator");
 const {
    registerUser,
    loginUser,
+   logoutUser, // ⭐ Import logoutUser
 } = require("../controllers/authController");
 const { authLimiter } = require("../middleware/rateLimiter");
 
 const router = express.Router();
 
-
+// Register
 router.post(
    "/register",
    authLimiter,
@@ -23,6 +24,7 @@ router.post(
    registerUser
 );
 
+// Login
 router.post(
    "/login",
    authLimiter,
@@ -32,6 +34,11 @@ router.post(
    ],
    loginUser
 );
+
+// Logout - ⭐ Use controller function
+router.post("/logout", logoutUser);
+
+module.exports = router;
 
 router.post("/logout", (req, res) => {
    res.clearCookie("token");
